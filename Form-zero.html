@@ -24,12 +24,49 @@
     </form>
 
     <script>
+
+
+        // Função simples para escapar HTML (proteção contra XSS)
+        function escapeHTML(str) { 
+            return str.replace(/[&<>"']/g, function (m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+
         document.getElementById("cadastro").addEventListener("submit", function(event) {
             event.preventDefault();
 
             let nome = document.getElementById("nome").value;
             let email = document.getElementById("email").value;
             let telefone = document.getElementById("telefone").value;
+
+
+             //Correção 2: Validação de entrada
+            if (!/^[a-zA-Z\s]+$/.test(nome)) {
+                alert("Nome inválido. Use apenas letras e espaços.");
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                alert("Email inválido.");
+                return;
+            }
+            if (!/^\d{10,11}$/.test(telefone)) {
+                alert("Telefone inválido. Digite 10 ou 11 números.");
+                return;
+            }
+            // Correção 3: Armazenamento inseguro no LocalStorage
+            // Codificando os dados em Base64 para evitar exposição simples (não é criptografia real!)
+            let safeData = { 
+                nome: btoa(nome), 
+                email: btoa(email), 
+                telefone: btoa(telefone) 
+            };
 
             let dados = localStorage.getItem("cadastro_local") ? JSON.parse(localStorage.getItem("cadastro_local")) : [];
             dados.push({ nome, email, telefone }); 
@@ -59,7 +96,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            ${dados.map(d => `<tr><td>${d.nome}</td><td>${d.email}</td><td>${d.telefone}</td></tr>`).join("")}
+                           ${
+                                dados.map(d => {
+                                    // Correção : Prevenção de XSS ao escapar os dados
+                                    return `<tr>
+                                        <td>${escapeHTML(atob(d.nome))}</td>
+                                        <td>${escapeHTML(atob(d.email))}</td>
+                                        <td>${escapeHTML(atob(d.telefone))}</td>
+                                    </tr>`;
+                                }).join("")
+                            }
                         </tbody>
                     </table>
                 </body>
